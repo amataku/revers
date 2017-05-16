@@ -1,0 +1,10 @@
+Debug/
+Engine/
+Example/
+*.ico
+*.rc
+*.db
+*.vcxproj
+*.filters
+*.html
+*.sln
