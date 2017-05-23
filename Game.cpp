@@ -2,11 +2,15 @@
 
 Game::Game(){
 	start();
-	aaw = 0;
-	aab = 0;
-	abw = 0;
-	abb = 0;
 	turn = 0;
+	black = 0;
+	white = 0;
+	board[3][3] = 1;
+	board[3][4] = 2;
+	board[4][3] = 2;
+	board[4][4] = 1;
+
+	const Font fonts(30);
 }
 
 void Game::start() {
@@ -23,13 +27,14 @@ void Game::update() {
 		}
 		break;
 	case State::GAME:
-		check();
-		/*if (Input::KeySpace.clicked) {
+		board_draw();
+		if (Input::KeySpace.clicked) {
 			state = State::CLEAR;
-		}*/
+		}
 		break;
 	case State::CLEAR:
 		if (Input::KeySpace.clicked) {
+			shoki();
 			state = State::START;
 			start();
 		}
@@ -43,8 +48,11 @@ void Game::draw() {
 	switch (state)
 	{
 	case State::START:
-		font(L"Reversi").draw(200, 100);
-		font(L"Push Space").draw(50, 200);
+		Rect(0, 0, 640, 480).draw(Palette::Green);
+		font(L"Reversi").draw(225, 100,Palette::White);
+		font(L"R  v  r  i").draw(225, 100, Palette::Black);
+
+		font(L"Push Space Start!").draw(130, 350);
 		break;
 	case State::GAME:
 		Rect(0, 0, 640, 480).draw(Palette::Black);
@@ -53,81 +61,329 @@ void Game::draw() {
 
 		Rect(0, 20, 440, 440).draw(Palette::Green);
 
-		Line(0, 20, 0, 460).draw(Palette::Black);
-		Line(55, 20, 55, 460).draw(Palette::Black);
-		Line(110, 20, 110, 460).draw(Palette::Black);
-		Line(165, 20, 165, 460).draw(Palette::Black);
-		Line(220, 20, 220, 460).draw(Palette::Black);
-		Line(275, 20, 275, 460).draw(Palette::Black);
-		Line(330, 20, 330, 460).draw(Palette::Black);
-		Line(385, 20, 385, 460).draw(Palette::Black);
-		Line(440, 20, 440, 460).draw(Palette::Black);
+		line_x = 0;
+		line_y = 0;
+		for (int i = 0; i < 9; i++) {
+			Line(line_x, 20, line_y, 460).draw(Palette::Black);
+			line_x += 55;
+			line_y += 55;
+		}
 
-		Line(0, 20, 440, 20).draw(Palette::Black);
-		Line(0, 75, 440, 75).draw(Palette::Black);
-		Line(0, 130, 440, 130).draw(Palette::Black);
-		Line(0, 185, 440, 185).draw(Palette::Black);
-		Line(0, 240, 440, 240).draw(Palette::Black);
-		Line(0, 295, 440, 295).draw(Palette::Black);
-		Line(0, 350, 440, 350).draw(Palette::Black);
-		Line(0, 405, 440, 405).draw(Palette::Black);
-		Line(0, 460, 440, 460).draw(Palette::Black);
+		line_x = 20;
+		line_y = 20;
+
+		for (int i = 0; i < 9; i++) {
+			Line(0, line_x, 440, line_y).draw(Palette::Black);
+			line_x += 55;
+			line_y += 55;
+		}
+		
 
 		break;
 	case State::CLEAR:
-		font(L"Result").draw(200, 100);
-		font(L"Push Space ").draw(50, 200);
+		font(L"Result").draw(235, 100);
+		if (white > black) {
+			font(L"White Win!").draw(190, 225);
+		}
+		if (white < black) {
+			font(L"Black Win!").draw(190, 225);
+		}
+		if (white == black) {
+			font(L"Draw!").draw(240, 225);
+		}
+		font(L"Push Space Menu").draw(130, 350);
 		break;
 	}
 }
 
-void Game::check() {
-	const Circle circle1(27, 48, 24);
-	const Circle circle2(82, 48, 24);
-	const bool raa = circle1.leftPressed;
-	const bool rab = circle2.leftPressed;
+void Game::check(int board_x, int board_y) {
+	const Circle circle(board_x * 55 + 27, board_y * 55 + 48, 24);
+	const bool c = circle.leftReleased;
+	if (c == 1) {
+		switch (board[board_x][board_y]) {
+		case 0:
+
+			if (turn % 2 == 0) {
+				board[board_x][board_y] = 1;
+				revers(board_x, board_y, board[board_x][board_y]);
+				if (flag == 0) {
+					board[board_x][board_y] = 0;
+					turn--;
+				}
+				turn++;
+				
+			}else if (turn % 2 != 0) {
+				board[board_x][board_y] = 2;
+				revers(board_x, board_y, board[board_x][board_y]);
+				if (flag == 0) {
+					board[board_x][board_y] = 0;
+					turn--;
+				}
+				turn++;
+			}
+			break;
+		}
+
+	}
+}
+
+void Game::board_draw() {
+	const Rect path(440, 300, 199, 100);
+	path.draw(Palette::White);
+	fonts(L"PATH").draw(500, 330,Palette::Black);
+	const bool r = path.leftReleased;
+	if (r == 1) {
+		turn++;
+	}
+	result();
+	fonts(L"White:", white).draw(455, 180);
+	fonts(L"Black:", black).draw(457, 220);
 	if (turn % 2 == 0) {
-		if (aab == 0) {
-			if (raa == true) {
-				aaw = 1;
-				turn++;
+		fonts(L"White turn").draw(455, 100);
+	}
+	else {
+		fonts(L"Black turn").draw(455, 100);
+	}
+	for (board_x = 0; board_x < 8; board_x++) {
+		for (board_y = 0; board_y < 8; board_y++) {
+			check(board_x, board_y);
+			if (board[board_x][board_y] == 1) {
+				Circle(board_x * 55 + 27, board_y * 55 + 48, 24).draw(Palette::White);
+			}
+			if (board[board_x][board_y] == 2) {
+				Circle(board_x * 55 + 27, board_y * 55 + 48, 24).draw(Palette::Black);
 			}
 		}
 	}
-	if (aaw == 1) {
-		circle1.draw(Palette::White);
+}
+
+void Game::revers(int board_x,int board_y,int now) {
+	int x, y, count = 0;
+	x = board_x;
+	y = board_y;
+	flag = 0;
+	//©
+	while (board_x != 0) {
+		board_x--;
+		count++;
+		if (board[board_x][board_y] == now) {
+			board_x = x;
+			while (count!=0){
+				board_x--;
+				count--;
+				if (board[board_x][board_y] != 0&&board[board_x][board_y]!=now) {
+					board[board_x][board_y] = now;
+					flag++;
+				}
+				if (board[board_x][board_y] == 0) {
+					break;
+				}
+			}
+		break;
+		}
 	}
-	if (turn % 2 != 0) {
-		if (aaw == 0) {
-			if (raa == true) {
-				aab = 1;
-				turn++;
+	//¨
+	board_x = x;
+	count = 0;
+	while (board_x != 7) {
+		board_x++;
+		count++;
+		if (board[board_x][board_y] == now) {
+			board_x = x;
+			while (count != 0) {
+				board_x++;
+				count--;
+				if (board[board_x][board_y] != 0 && board[board_x][board_y] != now) {
+					board[board_x][board_y] = now;
+					flag++;
+				}
+				if (board[board_x][board_y] == 0) {
+					break;
+				}
+			}
+			break;
+		}
+	}
+
+	//ª
+	board_x = x;
+	count = 0;
+	while (board_y != 0) {
+		board_y--;
+		count++;
+		if (board[board_x][board_y] == now) {
+			board_y = y;
+			while (count != 0) {
+				board_y--;
+				count--;
+				if (board[board_x][board_y] != 0 && board[board_x][board_y] != now) {
+					board[board_x][board_y] = now;
+					flag++;
+				}
+				if (board[board_x][board_y] == 0) {
+					break;
+				}
+			}
+			break;
+		}
+	}
+	//«
+	board_y = y;
+	count = 0;
+	while (board_y != 7) {
+		board_y++;
+		count++;
+		if (board[board_x][board_y] == now) {
+			board_y = y;
+			while (count != 0) {
+				board_y++;
+				count--;
+				if (board[board_x][board_y] != 0 && board[board_x][board_y] != now) {
+					board[board_x][board_y] = now;
+					flag++;
+				}
+				if (board[board_x][board_y] == 0) {
+					break;
+				}
+			}
+			break;
+		}
+	}
+	//©ª
+	board_x = x;
+	board_y = y;
+	count = 0;
+	while (board_x != 0 && board_y != 0) {
+		board_x--;
+		board_y--;
+		count++;
+		if (board[board_x][board_y] == now) {
+			board_x = x;
+			board_y = y;
+			while (count != 0) {
+				board_x--;
+				board_y--;
+				count--;
+				if (board[board_x][board_y] == 0) {
+					break;
+				}
+				if (board[board_x][board_y] != 0 && board[board_x][board_y] != now) {
+					board[board_x][board_y] = now;
+					flag++;
+				}
+			}
+			break;
+		}
+	}
+	//¨ª
+	board_x = x;
+	board_y = y;
+	count = 0;
+	while (board_x != 7 && board_y != 0) {
+		board_x++;
+		board_y--;
+		count++;
+		if (board[board_x][board_y] == now) {
+			board_x = x;
+			board_y = y;
+			while (count != 0) {
+				board_x++;
+				board_y--;
+				count--;
+				if (board[board_x][board_y] == 0) {
+					break;
+				}
+				if (board[board_x][board_y] != 0 && board[board_x][board_y] != now) {
+					board[board_x][board_y] = now;
+					flag++;
+				}
+			}
+			break;
+		}
+	}
+	//©«
+	board_x = x;
+	board_y = y;
+	count = 0;
+	while (board_x != 0 && board_y != 7) {
+		board_x--;
+		board_y++;
+		count++;
+		if (board[board_x][board_y] == now) {
+			board_x = x;
+			board_y = y;
+			while (count != 0) {
+				board_x--;
+				board_y++;
+				count--;
+				if (board[board_x][board_y] == 0) {
+					break;
+				}
+				if (board[board_x][board_y] != 0 && board[board_x][board_y] != now) {
+					board[board_x][board_y] = now;
+					flag++;
+				}
+			}
+			break;
+		}
+	}
+	//¨«
+	board_x = x;
+	board_y = y;
+	count = 0;
+	while (board_x != 7 && board_y != 7) {
+		board_x++;
+		board_y++;
+		count++;
+		if (board[board_x][board_y] == now) {
+			board_x = x;
+			board_y = y;
+			while (count != 0) {
+				board_x++;
+				board_y++;
+				count--;
+				if (board[board_x][board_y] == 0) {
+					break;
+				}
+				if (board[board_x][board_y] != 0 && board[board_x][board_y] != now) {
+					board[board_x][board_y] = now;
+					flag++;
+				}
+			}
+			break;
+		}
+	}
+}
+
+void Game::result() {
+	white = 0;
+	black = 0;
+	for (int i = 0; i < 8; i++) {
+		for (int j = 0; j < 8; j++) {
+			if (board[i][j]==1) {
+				white++;
+			}
+			if (board[i][j] == 2) {
+				black++;
 			}
 		}
 	}
-	if (aab == 1) {
-		circle1.draw(Palette::Black);
+	if (white + black == 64) {
+		state = State::CLEAR;
 	}
-	if (turn % 2 == 0) {
-		if (abb == 0) {
-			if (rab == true) {
-				abw = 1;
-				turn++;
-			}
+}
+
+void Game::shoki() {
+	turn = 0;
+	black = 0;
+	white = 0;
+	for (int i = 0; i < 8; i++) {
+		for (int j = 0; j < 8; j++) {
+			board[i][j] = 0;
 		}
 	}
-	if (abw == 1) {
-		circle2.draw(Palette::White);
-	}
-	if (turn % 2 != 0) {
-		if (abw == 0) {
-			if (rab == true) {
-				abb = 1;
-				turn++;
-			}
-		}
-	}
-	if (abb == 1) {
-		.draw(Palette::Black);
-	}
+	board[3][3] = 1;
+	board[3][4] = 2;
+	board[4][3] = 2;
+	board[4][4] = 1;
 }
