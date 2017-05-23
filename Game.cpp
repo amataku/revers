@@ -368,7 +368,7 @@ void Game::result() {
 			}
 		}
 	}
-	if (white + black == 64) {
+	if (white + black == 64 || white==0 || black==0) {
 		state = State::CLEAR;
 	}
 }
